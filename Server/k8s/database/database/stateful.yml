@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: backendsofa-db
+  labels:
+    app: backendsofa-db
+
+spec:
+  serviceName: backendsofa-db
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: backendsofa-db
+
+  template:
+    metadata:
+      labels:
+        app: backendsofa-db
+
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:13
+
+          ports:
+            - containerPort: 5432
+
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: POSTGRES_USER
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: POSTGRES_PASSWORD
+
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: POSTGRES_DB
+
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi

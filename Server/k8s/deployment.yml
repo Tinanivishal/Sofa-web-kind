@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backendsofa
+  labels:
+    app: backendsofa
+
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backendsofa
+
+  template:
+    metadata:
+      labels:
+        app: backendsofa
+
+    spec:
+      containers:
+        - name: backendsofa
+          image: vishaltinani/sofa-web:latest
+          imagePullPolicy: Always
+
+          ports:
+            
+            - containerPort: 3000
+
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: DATABASE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: JWT_SECRET
+            - name: NODE_ENV
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: NODE_ENV
+            - name: JWT_ACCESS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: JWT_ACCESS_SECRET
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: JWT_REFRESH_SECRET
+            - name: JWT_ACCESS_EXPIRES_IN
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: JWT_ACCESS_EXPIRES_IN
+            - name: JWT_REFRESH_EXPIRES_IN
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: JWT_REFRESH_EXPIRES_IN
+            - name: ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: ADMIN_EMAIL
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backendsofa-secrets
+                  key: ADMIN_PASSWORD

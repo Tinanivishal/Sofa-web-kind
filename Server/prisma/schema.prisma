@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  MANAGER
+  TECHNICIAN
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum RepairStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum RepairType {
+  UPHOLSTERY
+  FRAME
+  CUSHION
+  CLEANING
+  OTHER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart            Cart?
+  orders          Order[]
+  reviews         Review[]
+  repairBookings  RepairBooking[]        @relation("UserRepairBookings")
+  assignedRepairs RepairBooking[]        @relation("TechnicianAssignedRepairs")
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  products  Product[]
+}
+
+model Product {
+  id          String         @id @default(uuid())
+  name        String
+  description String
+  price       Decimal        @db.Decimal(10, 2)
+  stock       Int
+  status      ProductStatus  @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+
+  categoryId  String
+  category    Category       @relation(fields: [categoryId], references: [id])
+
+  images      ProductImage[]
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+  reviews     Review[]
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  imageUrl  String
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        String  @id @default(uuid())
+  quantity  Int
+
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Order {
+  id            String       @id @default(uuid())
+  userId        String
+  totalAmount   Decimal      @db.Decimal(10, 2)
+  status        OrderStatus  @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  createdAt     DateTime     @default(now())
+
+  user          User         @relation(fields: [userId], references: [id])
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model RepairBooking {
+  id                   String        @id @default(uuid())
+  userId               String
+  repairType           RepairType
+  description          String
+  bookingDate          DateTime
+  slot                 String
+  status               RepairStatus  @default(PENDING)
+  estimatedCost        Decimal?      @db.Decimal(10, 2)
+
+  assignedTechnicianId String?
+
+  user                 User          @relation("UserRepairBookings", fields: [userId], references: [id])
+  assignedTechnician   User?         @relation("TechnicianAssignedRepairs", fields: [assignedTechnicianId], references: [id])
+}
+
+model Technician {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String
+  available Boolean  @default(true)
+}
+
+model Coupon {
+  id           String       @id @default(uuid())
+  code         String       @unique
+  discountType DiscountType
+  discountValue Decimal     @db.Decimal(10, 2)
+  expiryDate   DateTime
+  usageLimit   Int?
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String
+  approved  Boolean  @default(false)
+
+  userId    String
+  productId String
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
